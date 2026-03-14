@@ -8,6 +8,7 @@ import {
   IconSend,
   IconSpeakerphone,
   IconShare,
+  IconBuilding,
 } from "@tabler/icons-react"
 
 import {
@@ -17,23 +18,36 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import type { Role } from "@/types"
 
-const navItems = [
-  { title: "Dashboard",  href: "/dashboard",  icon: IconLayoutDashboard },
-  { title: "CRM",        href: "/crm",         icon: IconUsers },
-  { title: "Outreach",   href: "/outreach",    icon: IconSend },
-  { title: "Ads",        href: "/ads",         icon: IconSpeakerphone },
-  { title: "Social",     href: "/social",      icon: IconShare },
+const baseNavItems = [
+  { title: "Dashboard", href: "/dashboard", icon: IconLayoutDashboard },
+  { title: "CRM",       href: "/crm",       icon: IconUsers },
+  { title: "Outreach",  href: "/outreach",  icon: IconSend },
+  { title: "Ads",       href: "/ads",       icon: IconSpeakerphone },
+  { title: "Social",    href: "/social",    icon: IconShare },
 ]
 
-export function NavMain() {
+const agencyAdminItems = [
+  { title: "Account", href: "/account", icon: IconBuilding },
+]
+
+interface NavMainProps {
+  role?: Role | null
+}
+
+export function NavMain({ role }: NavMainProps) {
   const pathname = usePathname()
+  const items = [
+    ...baseNavItems,
+    ...(role === "agency_admin" || role === "admin" ? agencyAdminItems : []),
+  ]
 
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
-          {navItems.map((item) => (
+          {items.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild

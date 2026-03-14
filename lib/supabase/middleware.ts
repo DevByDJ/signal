@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server"
 /**
  * Creates a Supabase client wired to the middleware request/response pair
  * so that session cookies are refreshed on every request.
+ * Also returns the user's profile role for routing decisions.
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -34,5 +35,16 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  return { supabaseResponse, user }
+  // Fetch the user's role for route-level access control
+  let role: string | null = null
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+    role = profile?.role ?? null
+  }
+
+  return { supabaseResponse, user, role }
 }
