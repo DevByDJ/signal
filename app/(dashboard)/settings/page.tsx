@@ -1,12 +1,11 @@
-import { auth } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/server"
 import { SettingsForm } from "@/components/settings/settings-form"
 
 export default async function SettingsPage() {
-  const session = await auth()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!session?.user) {
-    return null
-  }
+  if (!user) return null
 
   return (
     <div className="space-y-6">
@@ -18,11 +17,10 @@ export default async function SettingsPage() {
       </div>
       <SettingsForm
         user={{
-          name: session.user.name ?? null,
-          email: session.user.email ?? null,
-          image: session.user.image ?? null,
+          name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+          email: user.email ?? null,
+          image: user.user_metadata?.avatar_url ?? null,
         }}
-        facebookUserId={session.facebookUserId}
       />
     </div>
   )

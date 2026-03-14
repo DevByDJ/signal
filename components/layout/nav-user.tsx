@@ -1,6 +1,7 @@
 "use client"
 
-import { signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import {
   IconDotsVertical,
   IconLogout,
@@ -35,6 +36,13 @@ interface NavUserProps {
 
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
   const initials = (user.name ?? "U")
     .split(" ")
     .map((n) => n[0])
@@ -108,7 +116,7 @@ export function NavUser({ user }: NavUserProps) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
+            <DropdownMenuItem onClick={handleSignOut}>
               <IconLogout />
               Sign out
             </DropdownMenuItem>

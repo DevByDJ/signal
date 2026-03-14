@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/server"
 import { SectionCards } from "@/components/dashboard/section-cards"
 import { PipelineOverview } from "@/components/dashboard/pipeline-overview"
 import { RecentActivity } from "@/components/dashboard/recent-activity"
@@ -14,8 +14,9 @@ function formatHeaderDate(date: Date): string {
 }
 
 export default async function DashboardPage() {
-  const session = await auth()
-  const userName = session?.user?.name ?? "Welcome"
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const userName = user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? "Welcome"
   const today = formatHeaderDate(new Date())
 
   return (

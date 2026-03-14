@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useSession } from "next-auth/react"
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { IconChevronRight, IconSearch } from "@tabler/icons-react"
 import { Input } from "@/components/ui/input"
 import { MetaConnectButton } from "@/components/integrations/meta-connect-button"
@@ -224,10 +224,22 @@ function IntegrationRow({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function IntegrationsPage() {
-  const { data: session } = useSession()
   const [search, setSearch] = useState("")
+  const [isMetaConnected, setIsMetaConnected] = useState(false)
 
-  const isMetaConnected = !!session?.accessToken
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const { data } = await supabase
+        .from("integrations")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("platform", "meta_ads")
+        .maybeSingle()
+      setIsMetaConnected(!!data)
+    })
+  }, [])
 
   const activeIntegrations = INTEGRATIONS.filter(
     (i) => i.functional && isMetaConnected

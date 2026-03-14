@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import type { Contact } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,7 +78,6 @@ const mockContacts: Contact[] = [
 const oneWeekAgo = new Date("2025-03-06T00:00:00Z");
 
 export default async function OutreachPage() {
-  await auth();
 
   const newThisWeek = mockContacts.filter(
     (c) => new Date(c.created_at) >= oneWeekAgo

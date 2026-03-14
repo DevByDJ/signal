@@ -1,25 +1,36 @@
-import { auth } from "@/lib/auth"
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { updateSession } from "@/lib/supabase/middleware"
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth
-  const isDashboardRoute =
-    req.nextUrl.pathname.startsWith("/dashboard") ||
-    req.nextUrl.pathname.startsWith("/outreach") ||
-    req.nextUrl.pathname.startsWith("/ads") ||
-    req.nextUrl.pathname.startsWith("/integrations") ||
-    req.nextUrl.pathname.startsWith("/settings")
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/crm",
+  "/outreach",
+  "/ads",
+  "/social",
+  "/integrations",
+  "/settings",
+]
 
-  if (isDashboardRoute && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", req.nextUrl))
+export async function proxy(request: NextRequest) {
+  const { supabaseResponse, user } = await updateSession(request)
+  const { pathname } = request.nextUrl
+
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))
+
+  if (isProtected && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/login"
+    return NextResponse.redirect(url)
   }
 
-  if (req.nextUrl.pathname === "/login" && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl))
+  if (pathname === "/login" && user) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/dashboard"
+    return NextResponse.redirect(url)
   }
 
-  return NextResponse.next()
-})
+  return supabaseResponse
+}
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],

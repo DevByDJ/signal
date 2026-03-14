@@ -34,10 +34,9 @@ interface SettingsFormProps {
     email: string | null
     image: string | null
   }
-  facebookUserId?: string
 }
 
-export function SettingsForm({ user, facebookUserId }: SettingsFormProps) {
+export function SettingsForm({ user }: SettingsFormProps) {
   const [profileName, setProfileName] = useState(user.name ?? "")
   const [profileBio, setProfileBio] = useState("")
   const [profileLoading, setProfileLoading] = useState(false)
@@ -205,7 +204,7 @@ export function SettingsForm({ user, facebookUserId }: SettingsFormProps) {
               <Label htmlFor="facebook-user-id">Facebook User ID</Label>
               <Input
                 id="facebook-user-id"
-                value={facebookUserId ?? "Not connected"}
+                value="Manage via Integrations page"
                 readOnly
                 className="bg-muted"
               />

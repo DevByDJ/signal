@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import type { CampaignWithMetrics } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -62,7 +61,6 @@ const mockSummary = {
 };
 
 export default async function AdsPage() {
-  await auth();
 
   const activeCampaigns = mockCampaigns.filter((c) => c.status === "ACTIVE");
   const pausedCampaigns = mockCampaigns.filter((c) => c.status === "PAUSED");

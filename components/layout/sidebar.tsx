@@ -3,7 +3,8 @@
 import * as React from "react"
 import Link from "next/link"
 import { IconInnerShadowTop, IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
-import { useSession } from "next-auth/react"
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 
 import {
   Sidebar,
@@ -37,13 +38,24 @@ function SidebarEdgeTrigger() {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data: session } = useSession()
+  const [user, setUser] = useState<{ name: string | null; email: string | null; image: string | null }>({
+    name: null,
+    email: null,
+    image: null,
+  })
 
-  const user = {
-    name: session?.user?.name ?? null,
-    email: session?.user?.email ?? null,
-    image: session?.user?.image ?? null,
-  }
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user: u } }) => {
+      if (u) {
+        setUser({
+          name: u.user_metadata?.full_name ?? u.user_metadata?.name ?? null,
+          email: u.email ?? null,
+          image: u.user_metadata?.avatar_url ?? null,
+        })
+      }
+    })
+  }, [])
 
   return (
     <Sidebar collapsible="icon" {...props}>
