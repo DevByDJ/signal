@@ -15,6 +15,13 @@ export async function proxy(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request)
   const { pathname } = request.nextUrl
 
+  // Redirect root to login (or dashboard if already authenticated)
+  if (pathname === "/") {
+    const url = request.nextUrl.clone()
+    url.pathname = user ? "/dashboard" : "/login"
+    return NextResponse.redirect(url)
+  }
+
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))
 
   if (isProtected && !user) {
