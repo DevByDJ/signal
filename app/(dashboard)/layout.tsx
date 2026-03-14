@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/layout/sidebar"
+import { FacebookSDKProvider } from "@/components/integrations/facebook-sdk-provider"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 export default function DashboardLayout({
@@ -14,6 +15,7 @@ export default function DashboardLayout({
         } as React.CSSProperties
       }
     >
+      <FacebookSDKProvider />
       <AppSidebar variant="inset" />
       <SidebarInset>
         <div className="flex flex-1 flex-col">
