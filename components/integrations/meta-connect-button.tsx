@@ -1,18 +1,22 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { IconChevronRight, IconLoader2 } from "@tabler/icons-react"
 import { toast } from "sonner"
-import type { FacebookStatusResponse } from "./facebook-sdk-provider"
 
 type ConnectionState = "loading" | "connected" | "disconnected"
+
+const FACEBOOK_APP_ID = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID!
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL
+const SCOPES = "public_profile,ads_read,ads_management,leads_retrieval"
 
 export function MetaConnectButton() {
   const [connectionState, setConnectionState] = useState<ConnectionState>("loading")
   const [isWorking, setIsWorking] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   // Check if Meta Ads integration already exists in the integrations table
   useEffect(() => {
@@ -29,53 +33,42 @@ export function MetaConnectButton() {
     })
   }, [])
 
-  const handleConnect = useCallback(async () => {
-    setIsWorking(true)
-    try {
-      if (typeof window === "undefined" || !window.FB) {
-        toast.error("Facebook SDK not loaded. Please refresh and try again.")
-        setIsWorking(false)
-        return
-      }
-
-      window.FB.login(
-        async (response: FacebookStatusResponse) => {
-          if (response.status === "connected" && response.authResponse) {
-            const res = await fetch("/api/integrations/meta", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                accessToken: response.authResponse.accessToken,
-                userID: response.authResponse.userID,
-                expiresIn: response.authResponse.expiresIn,
-              }),
-            })
-            if (res.ok) {
-              setConnectionState("connected")
-              toast.success("Meta Ads connected successfully!")
-              router.refresh()
-            } else {
-              toast.error("Failed to save connection. Please try again.")
-            }
-          } else {
-            toast.error("Facebook login was cancelled or failed. Please try again.")
-          }
-          setIsWorking(false)
-        },
-        { scope: "public_profile,ads_read,ads_management,leads_retrieval" }
-      )
-    } catch {
-      toast.error("Something went wrong. Please try again.")
-      setIsWorking(false)
+  // Handle ?connected=meta and ?error= query params set by the OAuth callback
+  useEffect(() => {
+    const connected = searchParams.get("connected")
+    const error = searchParams.get("error")
+    if (connected === "meta") {
+      setConnectionState("connected")
+      toast.success("Meta Ads connected successfully!")
+      router.replace("/integrations")
+    } else if (error === "meta_cancelled") {
+      toast.info("Meta connection cancelled.")
+      router.replace("/integrations")
+    } else if (error) {
+      toast.error("Meta connection failed. Please try again.")
+      router.replace("/integrations")
     }
-  }, [router])
+  }, [searchParams, router])
+
+  const handleConnect = useCallback(() => {
+    setIsWorking(true)
+    const base = APP_URL ?? window.location.origin
+    const redirectUri = `${base}/api/integrations/meta/callback`
+    const authUrl =
+      `https://www.facebook.com/v19.0/dialog/oauth` +
+      `?client_id=${FACEBOOK_APP_ID}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&scope=${encodeURIComponent(SCOPES)}` +
+      `&response_type=code`
+    // Log the exact redirect_uri so you can verify it matches the Meta app settings
+    console.log("[Meta OAuth] redirect_uri:", redirectUri)
+    console.log("[Meta OAuth] full auth URL:", authUrl)
+    window.location.href = authUrl
+  }, [])
 
   const handleDisconnect = useCallback(async () => {
     setIsWorking(true)
     try {
-      if (typeof window !== "undefined" && window.FB) {
-        window.FB.logout(() => {})
-      }
       const res = await fetch("/api/integrations/meta", { method: "DELETE" })
       if (res.ok) {
         setConnectionState("disconnected")
@@ -91,7 +84,7 @@ export function MetaConnectButton() {
     }
   }, [router])
 
-  if (connectionState === "loading" || status === "loading") {
+  if (connectionState === "loading") {
     return (
       <span className="flex items-center gap-1 text-sm text-muted-foreground">
         <IconLoader2 className="size-3.5 animate-spin" />
